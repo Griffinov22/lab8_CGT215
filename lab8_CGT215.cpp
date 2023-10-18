@@ -54,9 +54,23 @@ int main()
     };
     world.AddPhysicsBody(top);
 
+    //ducks
+    PhysicsSprite duck;
+    Texture duckTex;
+    LoadTex(duckTex, "images/duck.png");
+    duck.setTexture(duckTex);
+    duck.setScale(Vector2f(0.5,0.5));
+    duck.setCenter(Vector2f(80, 120 - (duck.getGlobalBounds().height / 2)));
+
+
+    //text
     Text arrowText;
     arrowText.setFont(font);
     arrowText.setCharacterSize(fontSz);
+
+    Text scoreText;
+    scoreText.setFont(font);
+    scoreText.setCharacterSize(fontSz);
 
     Clock clock;
     Time lastTime(clock.getElapsedTime());
@@ -85,7 +99,14 @@ int main()
             FloatRect arrowSz(arrowText.getGlobalBounds());
             arrowText.setPosition(Vector2f(20 - (arrowSz.width / 2), 560 - (arrowSz.height / 2)));
             window.draw(arrowText);
-
+            //score text
+            scoreText.setString(to_string(score));
+            FloatRect scoreSz(scoreText.getGlobalBounds());
+            scoreText.setPosition(Vector2f(775 - (arrowSz.width / 2), 560 - (arrowSz.height / 2)));
+            window.draw(scoreText);
+            
+            //drawing ducks
+            window.draw(duck);
             window.display();
             
         }
