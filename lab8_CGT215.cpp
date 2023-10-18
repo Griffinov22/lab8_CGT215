@@ -19,12 +19,12 @@ void LoadTex(Texture& tex, string filename) {
 int main()
 {
     RenderWindow window(VideoMode(800, 600), "Duck Hunter");
-    World world(Vector2f(0, 0));
+    World world(Vector2f(0, 0)); //no pulling down gravity
     int score(0);
     int arrows(5);
     int fontSz(48);
     Font font;
-    if (!font.loadFromFile("Montserrat.ttf")) {
+    if (!font.loadFromFile("VT323.ttf")) {
         cout << "could not load Montserrat.ttf" << endl;
         exit(0);
     }
@@ -55,12 +55,19 @@ int main()
     world.AddPhysicsBody(top);
 
     //ducks
-    PhysicsSprite duck;
     Texture duckTex;
     LoadTex(duckTex, "images/duck.png");
-    duck.setTexture(duckTex);
-    duck.setScale(Vector2f(0.5,0.5));
-    duck.setCenter(Vector2f(80, 120 - (duck.getGlobalBounds().height / 2)));
+    PhysicsShapeList<PhysicsSprite> ducks;
+
+    //duck wall
+    PhysicsRectangle rightWall;
+    rightWall.setSize(Vector2f(10, 600));
+    rightWall.setCenter(Vector2f(605, 400)); //just over the right side of the viewport
+    rightWall.setStatic(true);
+    rightWall.onCollision = [](PhysicsBodyCollisionResult res) {
+        //remove duck from list
+        };
+    world.AddPhysicsBody(rightWall);
 
 
     //text
@@ -74,6 +81,8 @@ int main()
 
     Clock clock;
     Time lastTime(clock.getElapsedTime());
+    Time lastDuckTime(clock.getElapsedTime());
+
     while (arrows > 0) {
         Time currentTime(clock.getElapsedTime());
         int deltaTime((currentTime - lastTime).asMilliseconds());
@@ -102,13 +111,37 @@ int main()
             //score text
             scoreText.setString(to_string(score));
             FloatRect scoreSz(scoreText.getGlobalBounds());
-            scoreText.setPosition(Vector2f(775 - (arrowSz.width / 2), 560 - (arrowSz.height / 2)));
+            scoreText.setPosition(Vector2f(770 - (arrowSz.width), 560 - (arrowSz.height)));
             window.draw(scoreText);
             
             //drawing ducks
-            window.draw(duck);
-            window.display();
+            Time currentDuckTime(clock.getElapsedTime());
+            if ((currentDuckTime - lastDuckTime).asSeconds() >= 1) {
+                lastDuckTime = currentDuckTime;
+
+                PhysicsSprite &newDuck = ducks.Create();
+                newDuck.setTexture(duckTex);
+                newDuck.setScale(Vector2f(0.5, 0.5));
+                newDuck.setCenter(Vector2f(0, 120 - (newDuck.getGlobalBounds().height / 2)));
+                newDuck.setVelocity(Vector2f(0.5, 0));
+                world.AddPhysicsBody(newDuck);
+                newDuck.onCollision = [&world, &arrow, &arrows, &drawingArrow, &newDuck, &ducks, &score](PhysicsBodyCollisionResult res) {
+                    if (res.object2 == arrow) {
+                        drawingArrow = false;
+                        arrows--;
+                        world.RemovePhysicsBody(arrow);
+                        world.RemovePhysicsBody(newDuck);
+                        ducks.QueueRemove(newDuck);
+                        score += 10;
+                    }
+                };
+            }
+            for (auto duck : ducks) {
+                window.draw(duck);
+            }
             
+            window.display();
+            ducks.DoRemovals();
         }
 
 
